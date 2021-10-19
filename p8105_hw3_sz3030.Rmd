@@ -162,7 +162,54 @@ brfss_smart2010 %>%
 
 ```
 
+# Problem 3
 
+##  Load, tidy, and otherwise wrangle the data.
 
+```{r}
+accel_data = 
+  read.csv("./accel_data.csv") %>%
+  janitor::clean_names() %>%
+  pivot_longer(
+    activity_1:activity_1440,
+    names_prefix = "activity_",
+    names_to = "minutes",
+    values_to = "counts"
+  ) %>%
+  mutate(
+    minutes = as.numeric(minutes),
+    day = as.factor(day),
+    day = factor(day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")),
+    weekday.vs.weekend = recode(day, "Monday" = "Weekday", "Tuesday" = "Weekday", "Wednesday" = "Weekday", 
+                                "Thursday" = "Weekday", "Friday" = "Weekday", "Saturday" = "Weekend",
+                                "Sunday" = "Weekend")
+  )
+```
+
+There are `r nrow(accel_data)` rows and `r ncol(accel_data)` columns in the tidied dataset. There are 6 variables include week number, day id, day(Monday to Sunday), activities and their time and an indicator variable weekday or weekend.
+
+## Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?
+
+```{r}
+accel_data %>%
+  group_by(week, day) %>%
+  summarise(total_counts = sum(counts)) %>%
+  pivot_wider(
+    names_from = "day",
+    values_from = "total_counts"
+  )
+```
+
+Based on the table, we can conclude that the activity counts for Saturday in week 4 and 5 are the lowest, which show such big gaps between the numbers we get in week 1, 2 and 3 on Saturday. This is because there are lots of "1" count in the original table. What's more, the numbers on weekends usually lower than weekdays.
+
+## Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week.
+
+```{r}
+accel_data %>%
+  ggplot(aes(x = minutes, y = counts, group = day, color = day)) +
+  geom_line(alpha = .5)
+```
+
+The count numbers each day are relatively have the same trend throughout the week except in the 1250 minutes of the day. At this time period, we can see big differences between the days. Noted that Sunday is special and having high count numbers at around 650 minutes of the day.
 
 
