@@ -73,6 +73,94 @@ instacart %>%
   knitr::kable()
 ```
 
+# Problem 2
+
+## Load the dataset
+
+```{r}
+data("brfss_smart2010")
+```
+
+The dataset has `r nrow(brfss_smart2010)` rows and `r ncol(brfss_smart2010)` columns. The 23 variables contain information on lcoation, topic, question, response, and response number. 
+
+## First, do some data cleaning:
+
+```{r}
+brfss_smart2010 = 
+  brfss_smart2010 %>%
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health",
+         response %in% c("Excellent", "Very good", "Good", "Fair", "Poor")) %>%
+  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+```
+
+## In 2002, which states were observed at 7 or more locations? What about in 2010?
+
+```{r}
+# In 2002
+brfss_2002 =
+  brfss_smart2010 %>%
+  filter(year == 2002) %>%
+  group_by(locationabbr, locationdesc) %>%
+  distinct(locationabbr) %>%
+  group_by(locationabbr) %>%
+  summarize(n_locations = n()) %>% 
+  filter(n_locations >= 7) %>%
+  arrange(n_locations)
+
+brfss_2002
+```
+
+```{r}
+# In 2010
+brfss_2010 =
+  brfss_smart2010 %>%
+  filter(year == 2010) %>%
+  group_by(locationabbr, locationdesc) %>%
+  distinct(locationabbr) %>%
+  group_by(locationabbr) %>%
+  summarize(n_locations = n()) %>% 
+  filter(n_locations >= 7) %>%
+  arrange(n_locations)
+
+brfss_2010
+```
+
+## Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
+
+```{r}
+brfss_smart2010 %>%
+  filter(response == "Excellent") %>%
+  select(year, locationabbr, data_value) %>%
+  group_by(year, locationabbr) %>%
+  summarise(avg_data_value = mean(data_value)) %>%
+  ggplot(aes(x = year, y = avg_data_value, group = locationabbr, color = locationabbr)) +
+  geom_line() +
+  labs(
+    x = "Year",
+    y = "Average of the data values"
+  )
+```
+
+
+## Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+
+```{r}
+brfss_smart2010 %>%
+  filter(year %in% c(2006, 2010)) %>%
+  group_by(response, data_value) %>%
+  filter(locationabbr == "NY") %>%
+  ggplot(aes(x = response, y = data_value)) +
+  geom_violin(aes(fill = response), color = "blue", alpha = .5) + 
+  theme(legend.position = "bottom") +
+  labs(
+    x = "Response",
+    y = "Data value"
+  ) +
+  facet_grid(~year)
+
+
+```
 
 
 
